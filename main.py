@@ -22,13 +22,15 @@ env = gym.make(ENV_NAME)
 root = ENV_NAME
 if len(sys.argv)>1:
     root = sys.argv[1]
+
 if os.path.exists(root):
     shutil.rmtree(root)
 os.mkdir(root)
 
 args = [
         {},
-        {'random_process':False}
+        #{'max_epi':3},
+        #{'random_process':False}
         ]
 # model_names is a list like [max_epi_10, max_epi_20]
 model_names = [
@@ -48,15 +50,22 @@ for i in trange(len(args), desc='model', leave=True):
     os.mkdir(model_dir)
     arg = args[i]
     # repeat loop
-    for n in trange(3, desc='repeat', leave=True):
+    for n in trange(2, desc='repeat', leave=True):
         dir = '{}/{}'.format(model_dir, n)
         ddpg=DDPG(env, **arg)
         ddpg.train(dir)
         ddpg.save(dir)
-        ddpg.test(dir)
+        ddpg.test(dir, n=100)
 
 # visualization
-df = util.concat_models(root)
-util.plot(df[df[common.S_EPI] > 0], dir=root)
+# train data
+df = util.concat_models(root, csv_name='train_data.csv')
+util.plot(df[df[common.S_EPI] > 0], dir=root, name='train_data.png')
+
+# test data
+df = util.concat_models(root, csv_name='test_data.csv')
+util.plot(df[df[common.S_EPI] > 0], dir=root, name='test_data.png')
+
+
 
 

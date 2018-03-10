@@ -20,7 +20,7 @@ class DDPG(object):
             lr_critic=1e-3, 
             lr_actor=1e-4, 
             epsilon=1., 
-            max_epi=int(1e3), 
+            max_epi=1500, 
             epsilon_decay=1./(1e5), 
             gamma=.99, 
             target_update_frequency=200, 

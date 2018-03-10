@@ -2,6 +2,7 @@ import seaborn as sns
 import pandas as pd
 import common
 import os
+import matplotlib.pyplot as plt
 
 def concat_times(dir, csv_name='train_data.csv'):
     # subfolders are 0, 1, 2, ...
@@ -27,6 +28,7 @@ def concat_models(dir, csv_name='train_data.csv'):
     return res
 
 def plot(df, dir='.', name='sum.png', **kwargs):
+    plt.figure()
     headers = list(df)
     unit = None
     condition = None
@@ -35,4 +37,4 @@ def plot(df, dir='.', name='sum.png', **kwargs):
     if common.S_MODEL in headers:
         condition = common.S_MODEL
     sns_plot = sns.tsplot(data=df, time=common.S_EPI, value=common.S_TOTAL_R, unit=unit, condition=condition, **kwargs)
-    sns_plot.get_figure().savefig('{}/{}'.format(dir, name), dpi=200)
+    plt.savefig('{}/{}'.format(dir, name), dpi=200)
