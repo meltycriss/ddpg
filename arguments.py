@@ -1,10 +1,16 @@
 import argparse
 
+control_args = ['gpu', 'path', 'repeat', 'n_test']
+model_args = ['mem_size', 'lr_critic', 'lr_actor', 'epsilon', 'max_epi', 'epsilon_decay',
+        'gamma', 'target_update_frequency', 'batch_size', 'random_process', 'max_step']
+
 def get_args():
     parser = argparse.ArgumentParser(description='rl')
     # control args
     parser.add_argument('--gpu', type=str, choices=['0', '1', '2', '3'], default='2')
-    parser.add_argument('--path', type=str, default='.')
+    parser.add_argument('--path', type=str)
+    parser.add_argument('--repeat', type=int, default=3)
+    parser.add_argument('--n_test', type=int, default=100)
 
     # model args
     parser.add_argument('--mem_size', type=int)
@@ -25,16 +31,22 @@ def get_model_args():
     args = get_args()
     res = vars(args)
     for key, value in res.items():
-        if key=='gpu' or key=='path':
+        if key in control_args:
             res.pop(key)
+            continue
         if value is None:
             res.pop(key)
+            continue
     return res
 
 def get_control_args():
     args = get_args()
-    tmp = vars(args)
-    res = {}
-    res['gpu'] = tmp['gpu']
-    res['path']  =tmp['path']
+    res = vars(args)
+    for key, value in res.items():
+        if key in model_args:
+            res.pop(key)
+            continue
+        if value is None:
+            res.pop(key)
+            continue
     return res
