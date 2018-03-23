@@ -94,7 +94,7 @@ class DDPG(object):
                     epsilon -= self.EPSILON_DECAY
                     
                 o_, r, done, info = self.env.step(self.map_to_action(a))
-                self.exp.push(o, a, r, o_)
+                self.exp.push(o, a, r, o_, done)
                 
                 if epi>0: 
                     self.update_actor_critic()
@@ -132,16 +132,20 @@ class DDPG(object):
         bat_a = Variable(torch.Tensor(minibatch.action))
         bat_r = Variable(torch.Tensor(minibatch.reward)).unsqueeze(1)
         bat_o_ = Variable(torch.Tensor(minibatch.next_state))
+        bat_not_done_mask = list(map(lambda done: 0 if done else 1, minibatch.done))
+        bat_not_done_mask = Variable(torch.ByteTensor(bat_not_done_mask)).unsqueeze(1)
         if self.CUDA:
             bat_o = bat_o.cuda()
             bat_a = bat_a.cuda()
             bat_r = bat_r.cuda()
             bat_o_ = bat_o_.cuda()
+            bat_not_done_mask = bat_not_done_mask.cuda()
         
         # update critic
         bat_a_o_ = self.target_actor(bat_o_)
 
-        Gt = bat_r + self.GAMMA * self.target_critic(bat_o_, bat_a_o_)
+        Gt = bat_r
+        Gt[bat_not_done_mask] += self.GAMMA * self.target_critic(bat_o_, bat_a_o_)[bat_not_done_mask]
         Gt.detach_()
         eval_o = self.critic(bat_o, bat_a)
         criterion = nn.MSELoss()
