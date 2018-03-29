@@ -57,6 +57,10 @@ for i in trange(len(args), desc='model', leave=True):
     for n in trange(control_args['repeat'], desc='repeat', leave=True):
         dir = '{}/{}'.format(model_dir, n)
         ddpg=DDPG(env, **arg)
+        if control_args['load'] is not None:
+            model_path = control_args['load']
+            ddpg.load_actor(os.path.join(model_path, 'actor.pt'))
+            ddpg.load_critic(os.path.join(model_path, 'critic.pt'))
         ddpg.train(dir, control_args['save_interval'])
         ddpg.save(dir)
         ddpg.test(dir, n=control_args['n_test'])
