@@ -12,6 +12,7 @@ import torch.nn as nn
 from tqdm import trange
 import pandas as pd
 from gym import wrappers
+import os
 
 
 class DDPG(object):
@@ -69,9 +70,10 @@ class DDPG(object):
         self.data = pd.DataFrame(title)
         self.RAND_PROC = random_process
         
-    def train(self, dir=None):
+    def train(self, dir=None, interval=1000):
         if dir is not None:
             self.env = wrappers.Monitor(self.orig_env, '{}/train_record'.format(dir), force=True)
+            os.mkdir(os.path.join(dir, 'models'))
         update_counter = 0
         epsilon = self.EPSILON
         for epi in trange(self.MAX_EPI, desc='train epi', leave=True):
@@ -106,6 +108,9 @@ class DDPG(object):
                 o = o_
                 if done:
                     break
+            if dir is not None:
+                if (epi+1) % interval == 0:
+                    self.save(os.path.join(dir, 'models'), str(epi+1), save_data=False)
             s = pd.Series([epi, acc_r], index=[common.S_EPI, common.S_TOTAL_R])
             self.data = self.data.append(s, ignore_index=True)
     
@@ -191,10 +196,11 @@ class DDPG(object):
         else:
             print df
 
-    def save(self, dir):
-        torch.save(self.actor.state_dict(), '{}/actor.pt'.format(dir))
-        torch.save(self.critic.state_dict(), '{}/critic.pt'.format(dir))
-        self.data.to_csv('{}/train_data.csv'.format(dir))
+    def save(self, dir, suffix='', save_data=True):
+        torch.save(self.actor.state_dict(), '{}/actor{}.pt'.format(dir, suffix))
+        torch.save(self.critic.state_dict(), '{}/critic{}.pt'.format(dir, suffix))
+        if save_data:
+            self.data.to_csv('{}/train_data{}.csv'.format(dir, suffix))
 
     def load_actor(self, dir):
         self.actor.load_state_dict(torch.load(dir))

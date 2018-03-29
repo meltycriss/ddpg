@@ -1,40 +1,50 @@
-import gym
-import gym_foa
-from ddpg import DDPG
 from tqdm import trange
 import os
-import shutil
-from ddpg import util
-from ddpg import common
-import sys
-import logging
+import util
+import common
+import argparse
 
-assert len(sys.argv)>1, 'please specify path!'
+def get_args():
+    parser = argparse.ArgumentParser(description='eval')
+    parser.add_argument('-p', '--path', type=str, required=True)
+    parser.add_argument('-l', '--level', type=str, choices=['model', 'repeat'], required=True)
+    parser.add_argument('-i', '--interval', type=int, nargs='+', default=[1, 10, 100])
+    args = parser.parse_args()
+    res = vars(args)
+    return res
 
-root = sys.argv[1]
+def model_level(root, intervals):
+    # model level
+    # train data
+    df = util.concat_models(root, csv_name='train_data.csv')
+    for interval in intervals:
+        util.plot(df[df[common.S_EPI] % interval == 0], dir=root, name='train_data_gap_{}.png'.format(interval))
+    # test data
+    df = util.concat_models(root, csv_name='test_data.csv')
+    util.plot(df[df[common.S_EPI] >= 0], dir=root, name='test_data.png')
+    
+    # repeat level
+    subfolders = next(os.walk(root))[1]
+    for subfolder in subfolders:
+        path = os.path.join(root, subfolder)
+        repeat_level(path, intervals)
 
-# model level
-# train data
-df = util.concat_models(root, csv_name='train_data.csv')
-util.plot(df[df[common.S_EPI] > 0], dir=root, name='train_data.png')
-util.plot(df[df[common.S_EPI] % 10 == 0], dir=root, name='train_data_gap_10.png')
-util.plot(df[df[common.S_EPI] % 100 == 0], dir=root, name='train_data_gap_100.png')
-# test data
-df = util.concat_models(root, csv_name='test_data.csv')
-util.plot(df[df[common.S_EPI] > 0], dir=root, name='test_data.png')
+def repeat_level(root, intervals):
+    # train data
+    df = util.concat_times(root, csv_name='train_data.csv')
+    df[common.S_MODEL] = os.path.basename(root)
+    # test data
+    for interval in intervals:
+        util.plot(df[df[common.S_EPI] % interval == 0], dir=root, name='train_data_gap_{}.png'.format(interval))
+    df = util.concat_times(root, csv_name='test_data.csv')
+    df[common.S_MODEL] = os.path.basename(root)
+    util.plot(df[df[common.S_EPI] >= 0], dir=root, name='test_data.png')
 
-# repeat level
-subfolders = next(os.walk(root))[1]
-for subfolder in subfolders:
-    path = os.path.join(root, subfolder)
-    df = util.concat_times(path, csv_name='train_data.csv')
-    df[common.S_MODEL] = subfolder
-    util.plot(df[df[common.S_EPI] > 0], dir=path, name='train_data.png')
-    util.plot(df[df[common.S_EPI] % 10 == 0], dir=path, name='train_data_gap_10.png')
-    util.plot(df[df[common.S_EPI] % 100 == 0], dir=path, name='train_data_gap_100.png')
-    df = util.concat_times(path, csv_name='test_data.csv')
-    df[common.S_MODEL] = subfolder
-    util.plot(df[df[common.S_EPI] > 0], dir=path, name='test_data.png')
+args = get_args()
+if args['level']=='model':
+    model_level(args['path'], args['interval'])
+elif args['level']=='repeat':
+    repeat_level(args['path'], args['interval'])
 
 
 
