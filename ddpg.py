@@ -85,8 +85,8 @@ class DDPG(object):
             while True:
                 counter += 1
                 
-                if dir is not None:
-                    self.env.render()
+                #if dir is not None:
+                #    self.env.render()
                 
                 a = self.choose_action(o)
                 
@@ -181,8 +181,8 @@ class DDPG(object):
             o = self.env.reset()
             acc_r = 0
             while True:
-                if dir is not None:
-                    self.env.render()
+                #if dir is not None:
+                #    self.env.render()
                 a = self.choose_action(o)
                 o_, r, done, info = self.env.step(self.map_to_action(a))
                 acc_r += r
